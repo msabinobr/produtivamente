@@ -29,7 +29,7 @@ function criarEstruturaPlanilha() {
   if (!ss.getSheetByName(CONFIG.SHEETS.TAREFAS)) {
     const sheetTarefas = ss.insertSheet(CONFIG.SHEETS.TAREFAS);
     sheetTarefas.appendRow([
-      'ID', 'Titulo', 'Descricao', 'Prazo', 'Prioridade', 'Status', 'Energia_Necessaria', 'XP_Valor'
+      'ID', 'Titulo', 'Descricao', 'Prazo', 'Status', 'Interesse', 'Energia_Necessaria', 'DataCriacao', 'XP_Valor'
     ]);
     formatarCabecalho(sheetTarefas);
   }
@@ -72,6 +72,50 @@ function formatarCabecalho(sheet) {
   }
 }
 
+/**
+ * Busca todas as tarefas da planilha 'Tarefas_Master'.
+ * @return {Array<Object>} Um array de objetos, onde cada objeto representa uma tarefa.
+ *                         Retorna um array vazio em caso de erro.
+ */
+function getTarefas() {
+  try {
+    const ss = SpreadsheetApp.openById(CONFIG.SHEET_ID);
+    const sheet = ss.getSheetByName(CONFIG.SHEETS.TAREFAS);
+    
+    // Pega todos os valores, incluindo o cabeçalho
+    const allValues = sheet.getDataRange().getValues();
+
+    if (allValues.length < 2) { // Se não há dados ou apenas o cabeçalho
+      return [];
+    }
+
+    const headers = allValues[0].map(header => header.toString().trim()); // Limpa e guarda os cabeçalhos
+    const tasks = [];
+
+    // Começa do índice 1 para pular a linha de cabeçalho
+    for (let i = 1; i < allValues.length; i++) {
+      const row = allValues[i];
+      const taskObject = {};
+      for (let j = 0; j < headers.length; j++) {
+        // Tratar datas para que não sejam apenas objetos Date genéricos se necessário,
+        // mas para consistência com o que é salvo, manter como está pode ser ok.
+        // Prazo e DataCriacao são colunas de data.
+        if (headers[j] === 'Prazo' || headers[j] === 'DataCriacao') {
+          taskObject[headers[j]] = row[j] ? new Date(row[j]).toISOString() : null;
+        } else {
+          taskObject[headers[j]] = row[j];
+        }
+      }
+      tasks.push(taskObject);
+    }
+    return tasks;
+
+  } catch (error) {
+    Logger.log('Erro em getTarefas: ' + error.toString());
+    return []; // Retorna array vazio em caso de erro, conforme decisão
+  }
+}
+
 // Função para salvar check-in
 function salvarCheckin(checkin) {
   try {
@@ -108,120 +152,201 @@ function salvarCheckin(checkin) {
   }
 }
 
-// Função para salvar tarefa
-function salvarTarefa(tarefa) {
+/**
+ * Salva uma nova tarefa na planilha 'Tarefas_Master'.
+ * @param {object} dadosTarefa - Objeto contendo os dados da tarefa do frontend.
+ * @param {string} dadosTarefa.titulo - O título da tarefa.
+ * @param {string} [dadosTarefa.descricao] - A descrição da tarefa (opcional).
+ * @param {string|Date} [dadosTarefa.prazo] - O prazo da tarefa (opcional).
+ * @param {string} dadosTarefa.interesse - Nível de interesse na tarefa (e.g., "Alto", "Médio", "Baixo").
+ * @param {string} dadosTarefa.energiaNecessaria - Nível de energia necessário (e.g., "Alta", "Média", "Baixa").
+ * @return {object} Um objeto JSON indicando sucesso ou falha.
+ */
+function salvarTarefa(dadosTarefa) {
   try {
+    // Validate required fields
+    if (!dadosTarefa || !dadosTarefa.titulo) {
+      Logger.log('Erro em salvarTarefa: Título não fornecido | Dados: ' + JSON.stringify(dadosTarefa));
+      return { success: false, message: 'Título da tarefa é obrigatório.' };
+    }
+
     const ss = SpreadsheetApp.openById(CONFIG.SHEET_ID);
     const sheet = ss.getSheetByName(CONFIG.SHEETS.TAREFAS);
+
+    const newUuid = Utilities.getUuid();
+    const dataCriacao = new Date();
+
+    let prazoFinal = '';
+    if (dadosTarefa.prazo) {
+      if (typeof dadosTarefa.prazo === 'string') {
+        const parsedDate = new Date(dadosTarefa.prazo);
+        // Check if date is valid after parsing. getTime() returns NaN for invalid dates.
+        if (!isNaN(parsedDate.getTime())) {
+          prazoFinal = parsedDate;
+        } else {
+          // Handle invalid date string if necessary, or leave as empty string
+          Logger.log('Prazo em formato de string inválido: ' + dadosTarefa.prazo);
+        }
+      } else if (dadosTarefa.prazo instanceof Date) {
+        prazoFinal = dadosTarefa.prazo;
+      }
+    }
     
-    // Formatar datas
-    const dataCriacao = new Date(tarefa.dataCriacao);
-    const prazo = tarefa.prazo ? new Date(tarefa.prazo) : '';
-    
-    // Adicionar linha
+    const statusPadrao = 'A Fazer';
+    const xpPadrao = 20;
+
     sheet.appendRow([
-      tarefa.id,
-      tarefa.titulo,
-      '', // Descrição (vazia por padrão)
-      prazo,
-      tarefa.prioridade,
-      tarefa.concluida ? 'Concluída' : 'Pendente',
-      tarefa.energiaNecessaria,
-      20 // XP padrão
+      newUuid,
+      dadosTarefa.titulo,
+      dadosTarefa.descricao || '',
+      prazoFinal,
+      statusPadrao,
+      dadosTarefa.interesse || '', // Ensure these exist or provide defaults
+      dadosTarefa.energiaNecessaria || '', // Ensure these exist or provide defaults
+      dataCriacao,
+      xpPadrao
     ]);
-    
-    return {
-      success: true,
-      message: 'Tarefa salva com sucesso!'
-    };
+
+    return { success: true, message: 'Tarefa salva com sucesso!', tarefaId: newUuid };
+
   } catch (error) {
-    return {
-      success: false,
-      message: 'Erro ao salvar tarefa: ' + error.toString()
-    };
+    Logger.log('Erro em salvarTarefa: ' + error.toString() + ' | Dados: ' + JSON.stringify(dadosTarefa));
+    return { success: false, message: 'Erro ao salvar tarefa: ' + error.message }; // Use error.message for a cleaner message to client
   }
 }
 
-// Função para atualizar tarefa
-function atualizarTarefa(tarefa) {
+/**
+ * Atualiza campos específicos de uma tarefa existente na planilha 'Tarefas_Master'.
+ * @param {string} idTarefa - O ID da tarefa a ser atualizada.
+ * @param {object} dadosParaAtualizar - Um objeto contendo os campos da tarefa a serem atualizados.
+ * @param {string} [dadosParaAtualizar.titulo] - Novo título da tarefa.
+ * @param {string} [dadosParaAtualizar.descricao] - Nova descrição da tarefa.
+ * @param {string|Date} [dadosParaAtualizar.prazo] - Novo prazo da tarefa.
+ * @param {string} [dadosParaAtualizar.status] - Novo status da tarefa.
+ * @param {string} [dadosParaAtualizar.interesse] - Novo nível de interesse.
+ * @param {string} [dadosParaAtualizar.energiaNecessaria] - Novo nível de energia necessária.
+ * @return {object} Um objeto JSON indicando sucesso ou falha.
+ */
+function atualizarTarefa(idTarefa, dadosParaAtualizar) {
   try {
+    if (!idTarefa || !dadosParaAtualizar || Object.keys(dadosParaAtualizar).length === 0) {
+      Logger.log('Erro em atualizarTarefa: ID da tarefa ou dados para atualizar não fornecidos ou vazios. ID: ' + idTarefa + ', Dados: ' + JSON.stringify(dadosParaAtualizar));
+      return { success: false, message: 'ID da tarefa e dados para atualizar são obrigatórios.' };
+    }
+
     const ss = SpreadsheetApp.openById(CONFIG.SHEET_ID);
     const sheet = ss.getSheetByName(CONFIG.SHEETS.TAREFAS);
-    
-    // Encontrar linha da tarefa
-    const dados = sheet.getDataRange().getValues();
-    let linha = -1;
-    
-    for (let i = 1; i < dados.length; i++) {
-      if (dados[i][0] === tarefa.id) {
-        linha = i + 1; // +1 porque os índices começam em 0, mas as linhas em 1
+    const allValues = sheet.getDataRange().getValues();
+
+    let rowIndex = -1;
+    for (let i = 1; i < allValues.length; i++) { // Start from 1 to skip header
+      if (allValues[i][0] === idTarefa) { // Column 0 is 'ID'
+        rowIndex = i;
         break;
       }
     }
-    
-    if (linha === -1) {
-      return {
-        success: false,
-        message: 'Tarefa não encontrada'
-      };
+
+    if (rowIndex === -1) {
+      return { success: false, message: 'Tarefa não encontrada.' };
     }
-    
-    // Atualizar status
-    sheet.getRange(linha, 6).setValue(tarefa.concluida ? 'Concluída' : 'Pendente');
-    
-    // Atualizar título se fornecido
-    if (tarefa.titulo) {
-      sheet.getRange(linha, 2).setValue(tarefa.titulo);
-    }
-    
-    return {
-      success: true,
-      message: 'Tarefa atualizada com sucesso!'
+
+    const sheetRowNumber = rowIndex + 1; // Sheet rows are 1-based
+
+    // Column mapping (1-based for getRange)
+    // Based on 'ID', 'Titulo', 'Descricao', 'Prazo', 'Status', 'Interesse', 'Energia_Necessaria', 'DataCriacao', 'XP_Valor'
+    const columnMap = {
+      'titulo': 2, // 'Titulo'
+      'descricao': 3, // 'Descricao'
+      'prazo': 4, // 'Prazo'
+      'status': 5, // 'Status'
+      'interesse': 6, // 'Interesse'
+      'energiaNecessaria': 7 // 'Energia_Necessaria'
+      // 'DataCriacao' (column 8) and 'XP_Valor' (column 9) are generally not updated here.
     };
+
+    let updated = false;
+    for (const key in dadosParaAtualizar) {
+      if (dadosParaAtualizar.hasOwnProperty(key) && columnMap[key.toLowerCase()]) { // Ensure key matching is case-insensitive for safety or standardize keys
+        let valueToSet = dadosParaAtualizar[key];
+        const mappedKey = key.toLowerCase(); // Use a consistent key for map lookup
+
+        if (mappedKey === 'prazo') {
+          if (valueToSet) {
+            const parsedDate = new Date(valueToSet);
+            if (!isNaN(parsedDate.getTime())) {
+              valueToSet = parsedDate;
+            } else {
+              Logger.log('Erro em atualizarTarefa: Formato de prazo inválido para ' + key + ': ' + valueToSet + ' | ID: ' + idTarefa);
+              continue; // Skip updating this field if date is invalid
+            }
+          } else {
+            valueToSet = ''; // Allow clearing the prazo
+          }
+        }
+        sheet.getRange(sheetRowNumber, columnMap[mappedKey]).setValue(valueToSet);
+        updated = true;
+      }
+    }
+    
+    if (!updated && Object.keys(dadosParaAtualizar).length > 0) {
+        // This condition checks if any valid fields were provided for update.
+        // If dadosParaAtualizar contains only invalid keys, 'updated' will be false.
+        let validKeysFound = false;
+        for (const key in dadosParaAtualizar) {
+            if (columnMap[key.toLowerCase()]) {
+                validKeysFound = true;
+                break;
+            }
+        }
+        if (!validKeysFound) { // Only return error if no valid keys were in dadosParaAtualizar
+            Logger.log('Erro em atualizarTarefa: Nenhum campo válido para atualização fornecido. ID: ' + idTarefa + ', Dados: ' + JSON.stringify(dadosParaAtualizar));
+            return { success: false, message: 'Nenhum campo válido para atualização fornecido nos dados.'};
+        }
+    }
+
+    return { success: true, message: 'Tarefa atualizada com sucesso!' };
+
   } catch (error) {
-    return {
-      success: false,
-      message: 'Erro ao atualizar tarefa: ' + error.toString()
-    };
+    Logger.log('Erro em atualizarTarefa: ' + error.toString() + ' | ID: ' + idTarefa + ', Dados: ' + JSON.stringify(dadosParaAtualizar));
+    return { success: false, message: 'Erro ao atualizar tarefa: ' + error.message };
   }
 }
 
-// Função para excluir tarefa
-function excluirTarefa(id) {
+/**
+ * Exclui uma tarefa da planilha 'Tarefas_Master' com base no ID.
+ * @param {string} idTarefa - O ID da tarefa a ser excluída.
+ * @return {object} Um objeto JSON indicando sucesso ou falha.
+ */
+function excluirTarefa(idTarefa) {
   try {
+    if (!idTarefa) {
+      Logger.log('Erro em excluirTarefa: ID da tarefa não fornecido.');
+      return { success: false, message: 'ID da tarefa é obrigatório para exclusão.' };
+    }
+
     const ss = SpreadsheetApp.openById(CONFIG.SHEET_ID);
     const sheet = ss.getSheetByName(CONFIG.SHEETS.TAREFAS);
-    
-    // Encontrar linha da tarefa
-    const dados = sheet.getDataRange().getValues();
-    let linha = -1;
-    
-    for (let i = 1; i < dados.length; i++) {
-      if (dados[i][0] === id) {
-        linha = i + 1; // +1 porque os índices começam em 0, mas as linhas em 1
+    const allValues = sheet.getDataRange().getValues();
+    let rowIndexFound = -1;
+
+    for (let i = 1; i < allValues.length; i++) { // Start from 1 to skip header
+      if (allValues[i][0] === idTarefa) { // Column 0 is 'ID'
+        rowIndexFound = i;
         break;
       }
     }
-    
-    if (linha === -1) {
-      return {
-        success: false,
-        message: 'Tarefa não encontrada'
-      };
+
+    if (rowIndexFound === -1) {
+      return { success: false, message: 'Tarefa não encontrada.' };
     }
-    
-    // Excluir linha
-    sheet.deleteRow(linha);
-    
-    return {
-      success: true,
-      message: 'Tarefa excluída com sucesso!'
-    };
+
+    sheet.deleteRow(rowIndexFound + 1); // sheet.deleteRow is 1-based index
+
+    return { success: true, message: 'Tarefa excluída com sucesso!' };
+
   } catch (error) {
-    return {
-      success: false,
-      message: 'Erro ao excluir tarefa: ' + error.toString()
-    };
+    Logger.log('Erro em excluirTarefa: ' + error.toString() + ' | ID: ' + idTarefa);
+    return { success: false, message: 'Erro ao excluir tarefa: ' + error.message };
   }
 }
 
