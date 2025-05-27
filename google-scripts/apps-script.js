@@ -499,12 +499,44 @@ function abrirDialogoCheckin() {
   return htmlOutput; // Returning it is important if the try-catches fail or if it's used in a web app.
 }
 
+/**
+ * Retorna o conteúdo HTML para uma view específica.
+ * @param {string} viewName O nome do arquivo HTML da view (sem a extensão .html).
+ * @return {string} O conteúdo HTML da view.
+ */
+function getHtmlForView(viewName) {
+  try {
+    // Lista de views permitidas para segurança
+    const allowedViews = ['Checkin', 'Tarefas', 'Pomodoro', 'Habitos', 'Reflexoes', 'Sos', 'Configuracoes', 'VisaoGeral'];
+    // O nome do arquivo HTML deve ser capitalizado se o viewName vier em minúsculas do data-view
+    const fileName = viewName.charAt(0).toUpperCase() + viewName.slice(1);
+
+    if (viewName.toLowerCase() === 'visao-geral') { 
+      // Placeholder para o conteúdo do dashboard principal
+      return '<h1>Visão Geral do ProdutivaMente</h1><p>Aqui aparecerão seus resumos e KPIs principais.</p>';
+    }
+
+    if (allowedViews.map(v => v.toLowerCase()).includes(viewName.toLowerCase())) {
+      // Assumes viewName corresponds to an HTML file name (e.g., "Checkin" for "Checkin.html")
+      // These files are expected to be at the root of the Apps Script project
+      // (which means directly inside the `rootDir` if one is specified in .clasp.json, e.g. 'google-scripts/')
+      return HtmlService.createHtmlOutputFromFile(fileName).getContent();
+    } else {
+      Logger.log('Tentativa de acesso a view não permitida: ' + viewName);
+      throw new Error('View não permitida: ' + viewName);
+    }
+  } catch (e) {
+    Logger.log('Erro em getHtmlForView(' + viewName + '): ' + e.toString());
+    return '<h2>Erro ao carregar o módulo: ' + viewName + '</h2><p>' + e.message + '</p>';
+  }
+}
+
 // Configurar Web App para receber requisições do frontend
 function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify({
-    success: true,
-    message: 'API do ProdutivaMente está funcionando!'
-  })).setMimeType(ContentService.MimeType.JSON);
+  return HtmlService.createHtmlOutputFromFile('Dashboard')
+    .setTitle('ProdutivaMente Dashboard')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1'); // Para responsividade
 }
 
 function doPost(e) {

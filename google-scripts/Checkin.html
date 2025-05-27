@@ -1,0 +1,233 @@
+<style>
+  /* Removed body style */
+  .container {
+    max-width: 400px;
+    margin: 0 auto;
+    background-color: #fff; /* Assuming Dashboard.html provides a page background */
+    padding: 25px;
+    border-radius: 8px;
+    /* Potentially remove box-shadow if Dashboard provides card styling */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+  }
+  h1 {
+    color: #6366F1; /* Primary color from PRD */
+    font-size: 22px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .form-group {
+    margin-bottom: 18px;
+  }
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    font-size: 14px;
+  }
+  .emoji-buttons button {
+    font-size: 24px;
+    padding: 8px 12px;
+    margin-right: 5px;
+    border: 2px solid transparent;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #e9ecef;
+    transition: all 0.2s ease;
+  }
+  .emoji-buttons button.selected {
+    border-color: #6366F1;
+    background-color: #dadafc;
+  }
+  .emoji-buttons button:hover {
+    background-color: #dadafc;
+  }
+  input[type="range"] {
+    width: 100%;
+    cursor: pointer;
+  }
+  .energy-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 4px;
+  }
+  input[type="number"], textarea {
+    width: calc(100% - 20px); /* Assuming padding is part of this calculation */
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box; /* Add this for better width calculation */
+  }
+  textarea {
+    min-height: 60px;
+    resize: vertical;
+  }
+  .checkbox-group {
+    display: flex;
+    align-items: center;
+  }
+  .checkbox-group input[type="checkbox"] {
+    margin-right: 8px;
+    width: auto;
+  }
+  .submit-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background-color: #6366F1; /* Primary color */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  .submit-btn:hover {
+    background-color: #4f52c1; /* Darker shade of primary */
+  }
+</style>
+<div class="container">
+  <h1>Como você está hoje?</h1>
+  <form id="checkinForm">
+    <div class="form-group">
+      <label>Humor</label>
+      <div class="emoji-buttons" id="humorButtons">
+        <button type="button" data-value="1">😫</button>
+        <button type="button" data-value="2">😔</button>
+        <button type="button" data-value="3">😐</button>
+        <button type="button" data-value="4">🙂</button>
+        <button type="button" data-value="5">😄</button>
+      </div>
+      <input type="hidden" id="humor" name="humor">
+    </div>
+
+    <div class="form-group">
+      <label for="energia">Energia</label>
+      <input type="range" id="energia" name="energia" min="1" max="5" value="3">
+      <div class="energy-labels">
+        <span>Baixa</span>
+        <span>Média</span>
+        <span>Alta</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="sono">Sono (hrs)</label>
+      <input type="number" id="sono" name="sono" min="0" max="24" step="0.5">
+    </div>
+
+    <div class="form-group checkbox-group">
+      <input type="checkbox" id="medicacao" name="medicacao">
+      <label for="medicacao" style="margin-bottom:0; font-weight:normal;">Tomei minha medicação</label>
+    </div>
+
+    <div class="form-group">
+      <label for="observacoes">Observações</label>
+      <textarea id="observacoes" name="observacoes" rows="3"></textarea>
+    </div>
+
+    <button type="button" class="submit-btn" id="saveCheckinBtn">Salvar Check-in</button>
+  </form>
+</div>
+
+<script>
+  // Ensure script is re-runnable or elements are re-queried if this HTML is loaded multiple times.
+  // For this specific use case (injecting into a div), direct script execution should be fine.
+  // Consider wrapping in a function if re-attachment logic is needed, but for now, keep as is.
+  
+  let selectedHumor = null; // This variable might be global if not careful with multiple loads.
+                           // However, for HtmlService partials, script tags are evaluated once.
+  const humorButtonsContainer = document.getElementById('humorButtons');
+  const humorInput = document.getElementById('humor'); // These getElementById might conflict if Dashboard.html also has these IDs before loading.
+                                                    // Using classes and querying within a parent container specific to this view is safer.
+                                                    // For now, assuming IDs are unique enough for this stage.
+
+  // Clear previous listeners if any (more robust for multiple loads, though not strictly necessary for current plan)
+  // This is complex to do correctly without more structure, so skipping for now.
+  
+  if (humorButtonsContainer && !humorButtonsContainer._listenerAttached) { // Check if container exists
+    humorButtonsContainer.addEventListener('click', function(event) {
+      if (event.target.tagName === 'BUTTON') {
+        humorButtonsContainer.querySelectorAll('button').forEach(btn => {
+          btn.classList.remove('selected');
+        });
+        event.target.classList.add('selected');
+        selectedHumor = event.target.dataset.value;
+        if(humorInput) humorInput.value = selectedHumor; // Check if humorInput exists
+      }
+    });
+   humorButtonsContainer._listenerAttached = true; // Mark as attached
+  }
+
+
+  const saveBtn = document.getElementById('saveCheckinBtn');
+  if (saveBtn && !saveBtn._listenerAttached) { // Check if button exists and listener not attached
+    saveBtn.addEventListener('click', enviarCheckin);
+    saveBtn._listenerAttached = true; // Mark as attached
+  }
+
+  function enviarCheckin() {
+    // Re-query elements within this function scope to ensure they are from this instance of the form
+    const currentHumorInput = document.getElementById('humor'); 
+    const currentEnergiaInput = document.getElementById('energia');
+    const currentSonoInput = document.getElementById('sono');
+    const currentMedicacaoCheckbox = document.getElementById('medicacao');
+    const currentObservacoesTextarea = document.getElementById('observacoes');
+    const currentSaveBtn = document.getElementById('saveCheckinBtn');
+
+
+    const dados = {
+      humor: currentHumorInput ? (currentHumorInput.value ? parseInt(currentHumorInput.value) : null) : null,
+      energia: currentEnergiaInput ? parseInt(currentEnergiaInput.value) : NaN,
+      sono: currentSonoInput ? (currentSonoInput.value ? parseFloat(currentSonoInput.value) : null) : null,
+      medicacao: currentMedicacaoCheckbox ? currentMedicacaoCheckbox.checked : false,
+      observacoes: currentObservacoesTextarea ? (currentObservacoesTextarea.value.trim() || null) : null,
+      data: new Date().toISOString()
+    };
+
+    if (!dados.humor) {
+      alert('Por favor, selecione seu humor.');
+      return;
+    }
+    if (isNaN(dados.energia)) {
+      alert('Por favor, defina seu nível de energia.');
+      return;
+    }
+    
+    if(currentSaveBtn){
+      currentSaveBtn.disabled = true;
+      currentSaveBtn.textContent = 'Salvando...';
+    }
+    
+    google.script.run
+      .withSuccessHandler(fecharDialogo) // fecharDialogo might not be relevant if not a modal
+      .withFailureHandler(mostrarErro)
+      .salvarCheckin(dados);
+  }
+
+  function fecharDialogo(response) {
+    // If this is loaded into a div, google.script.host.close() will not work as intended for a modal.
+    // This function might need to be adapted or removed if not in a modal dialog context.
+    // For now, keep it, as the user also has `abrirDialogoCheckin` which uses it as a modal.
+    // When loaded into Dashboard.html, this might just do nothing or error silently.
+    // A better approach for SPA would be for Dashboard.html to handle view changes.
+    try {
+      google.script.host.close();
+    } catch (e) {
+      console.log("fecharDialogo: Not in a modal context or google.script.host.close is unavailable.");
+      // Potentially, Dashboard.html could provide a global function to close/clear the view
+      // e.g., if (typeof dashboard !== 'undefined' && dashboard.clearView) dashboard.clearView();
+    }
+  }
+
+  function mostrarErro(error) {
+    alert('Erro ao salvar check-in: ' + error.message);
+    const currentSaveBtn = document.getElementById('saveCheckinBtn');
+    if(currentSaveBtn){
+      currentSaveBtn.disabled = false;
+      currentSaveBtn.textContent = 'Salvar Check-in';
+    }
+  }
+</script>

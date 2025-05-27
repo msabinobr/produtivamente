@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <title>ProdutivaMente Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: 'Arial', sans-serif; /* Fallback, can be overridden by user styles */
+      margin: 0;
+      display: flex;
+      height: 100vh;
+      background-color: #f8f9fa; /* Page background */
+      color: #333;
+    }
+    #sidebar {
+      width: 220px;
+      background-color: #343a40; /* Dark sidebar */
+      color: white;
+      padding: 15px;
+      height: 100%;
+      box-sizing: border-box;
+    }
+    #sidebar h2 {
+      margin-top: 0;
+      font-size: 1.5em;
+      text-align: center;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #495057;
+    }
+    #sidebar ul {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+    #sidebar li a {
+      display: block;
+      color: #adb5bd;
+      padding: 10px 15px;
+      text-decoration: none;
+      border-radius: 4px;
+      margin-bottom: 5px;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    #sidebar li a:hover, #sidebar li a.active {
+      background-color: #495057;
+      color: white;
+    }
+    #contentAreaContainer {
+      flex-grow: 1;
+      padding: 20px;
+      overflow-y: auto;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+    #contentArea {
+      background-color: #ffffff; /* Content background */
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    /* Basic TDAH mode styling placeholder */
+    body.modo-tdah #sidebar {
+        /* Example: different background or font */
+    }
+    body.modo-tdah #contentArea {
+        /* Example: reduced clutter, different contrasts */
+    }
+  </style>
+</head>
+<body>
+
+  <div id="sidebar">
+    <h2>ProdutivaMente</h2>
+    <button id="toggleTDAH" style="width:100%; padding: 8px; margin-bottom:10px;">Modo TDAH (Off)</button>
+    <ul>
+      <li><a href="#" data-view="VisaoGeral" class="nav-link">Visão Geral</a></li>
+      <li><a href="#" data-view="Checkin" class="nav-link active">Check-in</a></li>
+      <li><a href="#" data-view="Tarefas" class="nav-link">Tarefas</a></li>
+      <li><a href="#" data-view="Pomodoro" class="nav-link">Pomodoro</a></li>
+      <!-- Add more navigation links here as modules are developed -->
+      <li><a href="#" data-view="Configuracoes" class="nav-link">Configurações</a></li>
+    </ul>
+  </div>
+
+  <div id="contentAreaContainer">
+    <div id="contentArea">
+      <!-- Content will be loaded here -->
+      <p>Carregando...</p>
+    </div>
+  </div>
+
+  <script>
+    // Function to load view content
+    function loadView(viewName) {
+      if (!viewName) {
+        console.error('viewName not provided to loadView');
+        document.getElementById('contentArea').innerHTML = '<h2>Erro: View não especificada.</h2>';
+        return;
+      }
+      document.getElementById('contentArea').innerHTML = '<p>Carregando ' + viewName + '...</p>';
+      google.script.run
+        .withSuccessHandler(function(htmlContent) {
+          document.getElementById('contentArea').innerHTML = htmlContent;
+          // After loading new content, scripts within that content might need initialization.
+          // For Checkin.html, its script tags are expected to run on injection.
+          updateActiveNavLink(viewName);
+        })
+        .withFailureHandler(function(error) {
+          document.getElementById('contentArea').innerHTML = '<h2>Erro ao carregar: ' + viewName + '</h2><p>' + error.message + '</p>';
+          console.error('Error loading view ' + viewName + ':', error);
+        })
+        .getHtmlForView(viewName);
+    }
+
+    // Function to update active link in sidebar
+    function updateActiveNavLink(viewName) {
+      const links = document.querySelectorAll('#sidebar .nav-link');
+      links.forEach(link => {
+        link.classList.remove('active');
+        if (link.dataset.view.toLowerCase() === viewName.toLowerCase()) {
+          link.classList.add('active');
+        }
+      });
+    }
+    
+    // Placeholder for TDAH mode toggle
+    function toggleModoTDAH() {
+      document.body.classList.toggle('modo-tdah');
+      const btn = document.getElementById('toggleTDAH');
+      if (document.body.classList.contains('modo-tdah')) {
+        btn.textContent = 'Modo TDAH (On)';
+        // Store preference if needed: localStorage.setItem('modoTDAH', 'true');
+      } else {
+        btn.textContent = 'Modo TDAH (Off)';
+        // Store preference if needed: localStorage.setItem('modoTDAH', 'false');
+      }
+      console.log('Modo TDAH toggled.');
+      // Note: localStorage might not be ideal in Apps Script HTML Service if sandboxed differently.
+      // Server-side UserProperties might be better for persistent settings.
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      // Add click listeners to navigation links
+      const navLinks = document.querySelectorAll('#sidebar .nav-link');
+      navLinks.forEach(link => {
+        link.addEventListener('click', function(event) {
+          event.preventDefault();
+          const viewName = this.dataset.view;
+          loadView(viewName);
+        });
+      });
+
+      // Add listener for TDAH toggle button
+      const toggleButton = document.getElementById('toggleTDAH');
+      if (toggleButton) {
+        toggleButton.addEventListener('click', toggleModoTDAH);
+      }
+      
+      // Load initial view (e.g., Checkin)
+      loadView('Checkin'); // As per requirement to load Checkin first
+      // Or, load a default dashboard/overview view:
+      // loadView('VisaoGeral'); 
+    });
+  </script>
+</body>
+</html>
