@@ -328,6 +328,52 @@ function sugerirTarefasLeves() {
   return sugestoes;
 }
 
+// Function to open the Check-in dialog
+function abrirDialogoCheckin() {
+  const htmlOutput = HtmlService.createHtmlOutputFromFile('Checkin')
+      .setWidth(450)
+      .setHeight(550);
+  // The method to display this depends on the context (e.g., Google Sheets, Docs, etc.)
+  // For example, in Google Sheets, you might use:
+  // SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Check-in Diário');
+  // Since the exact display method isn't specified for "Code.gs", 
+  // just returning the HtmlOutput object is the core part for HtmlService.
+  // However, the user's request implies this function itself should make it appear.
+  // Let's assume a generic way to make it usable in common Apps Script contexts.
+  // If this script is bound to a GSheet, GDoc, GSlides, this will work:
+  try {
+    SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Check-in Diário');
+  } catch (e) {
+    try {
+      DocumentApp.getUi().showModalDialog(htmlOutput, 'Check-in Diário');
+    } catch (e2) {
+      try {
+        SlidesApp.getUi().showModalDialog(htmlOutput, 'Check-in Diário');
+      } catch (e3) {
+        // If not in a GSheet/GDoc/GSlides context, this might be called from a web app's server-side function
+        // or another context where direct UI display isn't done this way.
+        // For now, we'll primarily support the common document-bound script case.
+        // Throwing an error if no UI context is found might be too much,
+        // as HtmlService.createHtmlOutputFromFile itself is the core request.
+        // The user might call this from doPost/doGet and return htmlOutput.
+        // For now, let's just prepare the output and let the calling context handle display if direct .showModalDialog fails.
+        // The original request was just "use HtmlService.createHtmlOutputFromFile('Checkin').setWidth(450).setHeight(550);"
+        // So, the core is just returning the output.
+        // However, the user also said "Ele será uma caixa de diálogo funcional imediata."
+        // This implies the function should try to show it.
+        // The most robust way if we don't know the context is to return it and let the caller show it.
+        // But to fulfil "caixa de diálogo funcional imediata", we should try common methods.
+        Logger.log("Could not show dialog directly. Context (Spreadsheet/Document/Slides) not detected or UI unavailable. Returning HTMLOutput object.");
+        // The original request was just to create the output. The prompt was:
+        // "Dentro dela, use HtmlService.createHtmlOutputFromFile('Checkin').setWidth(450).setHeight(550); para criar a saída HTML."
+        // This does not say to *show* it. It says "para *criar* a saída HTML".
+        // So, simply returning it is correct based on that specific line.
+      }
+    }
+  }
+  return htmlOutput; // Returning it is important if the try-catches fail or if it's used in a web app.
+}
+
 // Configurar Web App para receber requisições do frontend
 function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify({
@@ -378,4 +424,14 @@ function doPost(e) {
       message: 'Erro ao processar requisição: ' + error.toString()
     })).setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+/**
+ * Adds a custom menu to the Google Sheet UI when the spreadsheet is opened.
+ */
+function onOpen(e) {
+  SpreadsheetApp.getUi()
+      .createMenu('🚀 ProdutivaMente')
+      .addItem('🌟 Abrir Check-in Diário', 'abrirDialogoCheckin')
+      .addToUi();
 }
