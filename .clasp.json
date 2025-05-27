@@ -1,4 +1,9 @@
 {
   "scriptId": "1CjWXQrHQQeS-FvHxuFDP_1r3uPxuNTR16UnvOjxv5N4C4ai4i3vrwOWU",
-  "rootDir": "./google-scripts"
+  "rootDir": "./google-scripts",
+  "scriptExtensions": [".js", ".gs"],
+  "htmlExtensions": [".html"],
+  "jsonExtensions": [".json"],
+  "filePushOrder": [],
+  "skipSubdirectories": false
 }
