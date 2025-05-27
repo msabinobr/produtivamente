@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProdutivaMente - Sistema de Produtividade para TDAH</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/modo-tdah.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="assets/img/favicon.png">
+    <meta name="description" content="Sistema integrado de produtividade para pessoas com TDAH, combinando gestão de tarefas, monitoramento de bem-estar mental e gamificação.">
+</head>
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="logo">
+                <h2>🧠 ProdutivaMente</h2>
+                <button id="toggle-tdah" onclick="toggleModoTDAH()">
+                    ✨ Modo TDAH
+                </button>
+            </div>
+            
+            <ul class="menu-items">
+                <li><a href="#" data-section="checkin" class="active">📊 Check-in</a></li>
+                <li><a href="#" data-section="tarefas">✅ Tarefas</a></li>
+                <li><a href="#" data-section="pomodoro">🍅 Pomodoro</a></li>
+                <li><a href="#" data-section="dashboard">📈 Dashboard</a></li>
+            </ul>
+            
+            <div class="gamificacao-sidebar">
+                <div class="xp-display">
+                    <span>Level 1</span>
+                    <div class="xp-bar">
+                        <div class="xp-progress" style="width: 10%"></div>
+                    </div>
+                    <span>10 / 100 XP</span>
+                </div>
+            </div>
+        </nav>
+
+        <main class="content">
+            <!-- Seção de Check-in -->
+            <section id="checkin" class="section-container active">
+                <h1>Como você está hoje?</h1>
+                
+                <div class="checkin-container">
+                    <div class="humor-selector">
+                        <label>Humor atual</label>
+                        <div class="emoji-buttons">
+                            <button data-valor="1">😫</button>
+                            <button data-valor="2">😔</button>
+                            <button data-valor="3">😐</button>
+                            <button data-valor="4">🙂</button>
+                            <button data-valor="5">😄</button>
+                        </div>
+                    </div>
+                    
+                    <div class="energia-selector">
+                        <label>Nível de energia</label>
+                        <input type="range" min="1" max="5" value="3" class="energia-slider">
+                        <div class="energia-labels">
+                            <span>Baixa</span>
+                            <span>Média</span>
+                            <span>Alta</span>
+                        </div>
+                    </div>
+                    
+                    <div class="sono-input">
+                        <label>Horas de sono</label>
+                        <input type="number" min="0" max="24" value="7" step="0.5">
+                    </div>
+                    
+                    <div class="medicacao-check">
+                        <label>
+                            <input type="checkbox"> Tomei minha medicação
+                        </label>
+                    </div>
+                    
+                    <div class="observacoes-input">
+                        <label>Observações (opcional)</label>
+                        <textarea placeholder="Como você está se sentindo? Algo importante aconteceu?"></textarea>
+                    </div>
+                    
+                    <button onclick="salvarCheckin()" class="btn-primary">
+                        Começar o dia! ✨
+                    </button>
+                </div>
+            </section>
+
+            <!-- Seção de Tarefas -->
+            <section id="tarefas" class="section-container">
+                <h1>Minhas Tarefas</h1>
+                
+                <div class="tarefas-container">
+                    <div class="tarefas-input">
+                        <input type="text" id="nova-tarefa" placeholder="Adicionar nova tarefa... (Ex: Estudar matemática até amanhã #urgente)">
+                        <button onclick="adicionarTarefa()" class="btn-primary">Adicionar</button>
+                    </div>
+                    
+                    <div class="tarefas-filtros">
+                        <button class="filtro-btn active" data-filtro="todas">Todas</button>
+                        <button class="filtro-btn" data-filtro="hoje">Hoje</button>
+                        <button class="filtro-btn" data-filtro="alta">Prioridade Alta</button>
+                        <button class="filtro-btn" data-filtro="energia">Baixa Energia</button>
+                    </div>
+                    
+                    <div class="tarefas-lista">
+                        <!-- As tarefas serão adicionadas dinamicamente pelo JavaScript -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Seção de Pomodoro -->
+            <section id="pomodoro" class="section-container">
+                <h1>Pomodoro Adaptado</h1>
+                
+                <div class="pomodoro-container">
+                    <div class="pomodoro-timer">
+                        <div class="timer-display">
+                            <span id="tempo-restante">25:00</span>
+                        </div>
+                        
+                        <div class="timer-controls">
+                            <button onclick="iniciarTimer()" class="btn-primary">▶️ Iniciar</button>
+                            <button onclick="pausarTimer()" class="btn-secondary">⏸️ Pausar</button>
+                            <button onclick="pararTimer()" class="btn-secondary">⏹️ Parar</button>
+                        </div>
+                        
+                        <div class="interrupcoes-counter">
+                            <span>Interrupções: <span id="count-interrupcoes">0</span></span>
+                            <button onclick="marcarInterrupcao()" class="btn-text">+1 Interrupção</button>
+                        </div>
+                    </div>
+                    
+                    <div class="pomodoro-config">
+                        <h3>Configurações</h3>
+                        
+                        <div class="config-item">
+                            <label>Duração do foco (min):</label>
+                            <input type="range" min="15" max="45" value="25" id="duracao-timer" oninput="atualizarConfigPomodoro()">
+                            <span id="duracao-valor">25</span>
+                        </div>
+                        
+                        <div class="config-item">
+                            <label>Duração da pausa (min):</label>
+                            <input type="range" min="5" max="15" value="5" id="duracao-pausa" oninput="atualizarConfigPomodoro()">
+                            <span id="pausa-valor">5</span>
+                        </div>
+                        
+                        <div class="config-item">
+                            <label>Tarefa atual:</label>
+                            <select id="tarefa-pomodoro">
+                                <option value="">-- Selecione uma tarefa --</option>
+                                <!-- As opções serão preenchidas dinamicamente -->
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Seção de Dashboard -->
+            <section id="dashboard" class="section-container">
+                <h1>Meu Dashboard</h1>
+                
+                <div class="dashboard-container">
+                    <div class="dashboard-card">
+                        <h3>Humor e Energia</h3>
+                        <div class="chart-container" id="humor-energia-chart">
+                            <!-- Gráfico será renderizado aqui -->
+                            <p class="placeholder-text">Faça check-ins diários para ver seus dados aqui.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <h3>Produtividade</h3>
+                        <div class="chart-container" id="produtividade-chart">
+                            <!-- Gráfico será renderizado aqui -->
+                            <p class="placeholder-text">Complete tarefas e sessões Pomodoro para ver seus dados aqui.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <h3>Resumo da Semana</h3>
+                        <div class="stats-container">
+                            <div class="stat-item">
+                                <span class="stat-label">Check-ins</span>
+                                <span class="stat-value">0/7</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Tarefas Concluídas</span>
+                                <span class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Pomodoros</span>
+                                <span class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">XP Ganho</span>
+                                <span class="stat-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Notificações -->
+    <div id="notificacao" class="notificacao">
+        <span id="notificacao-texto"></span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="assets/js/app.js"></script>
+    <script src="assets/js/checkin.js"></script>
+    <script src="assets/js/tarefas.js"></script>
+    <script src="assets/js/pomodoro.js"></script>
+    <script src="assets/js/dashboard.js"></script>
+</body>
+</html>

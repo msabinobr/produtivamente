@@ -1,0 +1,131 @@
+/* Modo TDAH - Estilos específicos */
+body.modo-tdah {
+  --cor-primaria: #6366F1;      /* Indigo 500 */
+  --cor-secundaria: #10B981;    /* Emerald 500 */
+  --cor-fundo: #F8FAFC;         /* Slate 50 */
+  --cor-texto: #1E293B;         /* Slate 800 */
+  --cor-texto-claro: #64748B;   /* Slate 500 */
+  --cor-borda: #E2E8F0;         /* Slate 200 */
+  --cor-sucesso: #059669;       /* Emerald 600 */
+  --cor-alerta: #F59E0B;        /* Amber 500 */
+  --cor-erro: #EF4444;          /* Red 500 */
+  --espacamento: 24px;          /* Espaçamento aumentado */
+  --fonte-tamanho: 18px;        /* Texto mais legível */
+  --bordas: 12px;               /* Cantos mais arredondados */
+  --sombra: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Aumentar espaçamento geral */
+body.modo-tdah .content {
+  padding: var(--espacamento);
+}
+
+body.modo-tdah .section-container {
+  max-width: 1000px; /* Reduzir largura máxima para melhor foco */
+}
+
+/* Botões maiores e mais destacados */
+body.modo-tdah .btn-primary {
+  padding: 16px 32px;
+  font-size: 18px;
+  border-radius: var(--bordas);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(99, 102, 241, 0.2);
+}
+
+body.modo-tdah .btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(99, 102, 241, 0.3);
+}
+
+body.modo-tdah .btn-secondary {
+  padding: 16px 32px;
+  font-size: 18px;
+  border-radius: var(--bordas);
+}
+
+/* Cards com mais destaque */
+body.modo-tdah .checkin-container,
+body.modo-tdah .tarefas-container,
+body.modo-tdah .pomodoro-timer,
+body.modo-tdah .pomodoro-config,
+body.modo-tdah .dashboard-card {
+  padding: 2.5rem;
+  border-radius: var(--bordas);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+}
+
+/* Tarefas mais destacadas */
+body.modo-tdah .tarefa-card {
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-left: 6px solid var(--cor-primaria);
+}
+
+/* Inputs mais fáceis de usar */
+body.modo-tdah input[type="text"],
+body.modo-tdah input[type="number"],
+body.modo-tdah textarea,
+body.modo-tdah select {
+  padding: 1rem;
+  font-size: 1.1rem;
+  border-radius: var(--bordas);
+}
+
+body.modo-tdah .emoji-buttons button {
+  width: 70px;
+  height: 70px;
+  font-size: 2rem;
+}
+
+/* Timer mais destacado */
+body.modo-tdah .timer-display {
+  font-size: 5rem;
+  margin-bottom: 2.5rem;
+}
+
+/* Melhorar contraste e legibilidade */
+body.modo-tdah .menu-items a {
+  padding: 1rem 1.5rem;
+}
+
+body.modo-tdah .menu-items a.active {
+  box-shadow: 0 4px 6px rgba(99, 102, 241, 0.2);
+}
+
+/* Reduzir elementos distrativos */
+body.modo-tdah .sidebar {
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+/* Melhorar sliders */
+body.modo-tdah input[type="range"]::-webkit-slider-thumb {
+  width: 28px;
+  height: 28px;
+}
+
+/* Animações mais suaves */
+body.modo-tdah * {
+  transition-duration: 0.3s;
+}
+
+/* Foco em elementos ativos */
+body.modo-tdah input:focus,
+body.modo-tdah textarea:focus,
+body.modo-tdah select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+  border-color: var(--cor-primaria);
+}
+
+/* Reduzir distrações no dashboard */
+body.modo-tdah .dashboard-container {
+  gap: 2rem;
+}
+
+/* Notificações mais visíveis */
+body.modo-tdah .notificacao {
+  padding: 1.5rem 2rem;
+  border-left: 6px solid var(--cor-primaria);
+  font-size: 1.1rem;
+}
