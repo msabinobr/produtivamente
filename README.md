@@ -27,12 +27,10 @@ produtivamente/
 │   │   ├── tarefas.js          # Módulo de Tarefas
 │   │   ├── pomodoro.js         # Módulo de Pomodoro
 │   │   └── dashboard.js        # Módulo de Dashboard
-│   └── img/                    # Imagens e ícones
-├── components/                 # Componentes HTML
+│   └── img/                    # Imagens e ícones (e.g., favicon.png)
 ├── google-scripts/             # Scripts para Google Apps Script
 │   └── apps-script.js          # Script para integração com Google Sheets
 └── docs/                       # Documentação
-    ├── setup-guide.md          # Guia de configuração
     └── google-integration.md   # Guia de integração com Google
 ```
 
@@ -78,7 +76,7 @@ produtivamente/
 1. Na planilha, vá para "Extensões" > "Apps Script"
 2. Exclua o código padrão no editor
 3. Copie e cole o conteúdo do arquivo `google-scripts/apps-script.js`
-4. Substitua `SUBSTITUA_PELO_ID_DA_SUA_PLANILHA` pelo ID da sua planilha
+4. No arquivo `google-scripts/apps-script.js`, localize a linha `SHEET_ID: '1Tx0Vrj3Lv5mTIGfWOWvUEMlNMRsUKPWbDQ_4D6SvSEA',` dentro do objeto `CONFIG`. Substitua o ID de exemplo (`'1Tx0Vrj3Lv5mTIGfWOWvUEMlNMRsUKPWbDQ_4D6SvSEA'`) pelo ID da sua própria Planilha Google.
 5. Salve o projeto (Ctrl+S ou ⌘+S)
 6. Renomeie o projeto para "ProdutivaMente"
 
@@ -98,35 +96,8 @@ produtivamente/
 
 1. Abra o arquivo `assets/js/app.js` no seu repositório
 2. Localize a função `enviarParaGoogleSheets`
-3. Substitua o comentário pela implementação real:
-
-```javascript
-async function enviarParaGoogleSheets(tipo, dados) {
-    try {
-        const response = await fetch('SUA_URL_DO_WEB_APP_AQUI', {
-            method: 'POST',
-            body: JSON.stringify({
-                action: tipo === 'checkins' ? 'salvarCheckin' : 
-                        tipo === 'tarefas' ? 'salvarTarefa' :
-                        tipo === 'tarefas_atualizacao' ? 'atualizarTarefa' :
-                        tipo === 'tarefas_exclusao' ? 'excluirTarefa' :
-                        tipo === 'pomodoros' ? 'salvarPomodoro' : 'atualizarGamificacao',
-                [tipo === 'checkins' ? 'checkin' : 
-                 tipo === 'tarefas' || tipo === 'tarefas_atualizacao' ? 'tarefa' :
-                 tipo === 'tarefas_exclusao' ? 'id' :
-                 tipo === 'pomodoros' ? 'pomodoro' : 'gamificacao']: dados
-            })
-        });
-        
-        return await response.json();
-    } catch (error) {
-        console.error('Erro ao enviar para Google Sheets:', error);
-        return { success: false, message: error.toString() };
-    }
-}
-```
-
-4. Substitua `SUA_URL_DO_WEB_APP_AQUI` pela URL do Web App que você copiou
+3. No arquivo `assets/js/app.js`, localize a função `enviarParaGoogleSheets`. Dentro desta função, você encontrará uma chamada `fetch` com uma URL existente, como por exemplo: `fetch('https://script.google.com/macros/s/AKfycbwVqIB93NcWXX4j-YPRLj1QuozQRrHRWsZaOiaQIb6zjbWPbIsisRuC8Pv-tRUuUHdFoA/exec', { ... })`.
+4. Substitua esta URL existente pela URL do Web App que você copiou na etapa 6.
 5. Salve o arquivo e faça commit das alterações
 
 ### 8. Inicialização da Estrutura da Planilha
@@ -182,4 +153,4 @@ Contribuições são bem-vindas! Sinta-se à vontade para:
 
 ## Licença
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para detalhes.
+Este projeto está licenciado sob a licença MIT. Uma cópia da licença pode ser encontrada no arquivo `LICENSE` (a ser adicionado na raiz do projeto). O texto completo da licença MIT também está disponível em [https://opensource.org/licenses/MIT](https://opensource.org/licenses/MIT).
