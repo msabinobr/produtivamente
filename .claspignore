@@ -1,0 +1,15 @@
+# General ignores
+.git/
+.gitignore
+node_modules/
+package.json
+package-lock.json
+*.local
+*.log
+.claspignore
+
+# Project-specific client-side assets
+assets/
+index.html
+
+# Any other specific files/directories to ignore can be added here
